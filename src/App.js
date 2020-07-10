@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { API, graphqlOperation } from 'aws-amplify';
 import { withAuthenticator } from 'aws-amplify-react'
-import { createNote } from './graphql/mutations';
+import { createNote, deleteNote } from './graphql/mutations';
 import { listNotes } from './graphql/queries';
 
 class App extends Component {
@@ -18,7 +18,6 @@ class App extends Component {
         this.setState({
             notes: result.data.listNotes.items
         })
-
     }
 
     handleChangeNote = event => this.setState({ note: event.target.value });
@@ -31,6 +30,7 @@ class App extends Component {
 
         const input = { note };
 
+        // run the mutation to add the note and, once this is complete, store the returned data (the note we added)
         const result = await API.graphql(graphqlOperation(createNote, { input }));
 
         // use result from mutation to update UI
@@ -38,6 +38,22 @@ class App extends Component {
         const updatedNotes = [newNote, ...notes];
         this.setState({notes: updatedNotes, note:''});
     };
+
+    handleDeleteNote = async nodeId => {
+        const input = { id: nodeId}
+
+        // call the deleteNode mutation
+        const result = await API.graphql(graphqlOperation(deleteNote, { input}))
+
+        // use the Id to filter out the notes in our states to update teh UI
+        const deletedNodeId = result.data.deleteNode.id;
+
+        const { notes } = this.state;
+
+        const updatedNotes =  notes.filter(note => note.id !== deletedNodeId)
+
+        this.setState({notes: updatedNotes});
+    }
 
     render() {
         const { notes, note } = this.state;
@@ -65,7 +81,9 @@ class App extends Component {
                             <li className="list pa1 f3">
                                 {note.note}
                             </li>
-                            <button className="bg-transparent bn f4">&times;</button>
+                          {/* Remember to make this an arrow function - since we are adding arguments we need to add '()' */}
+                          {/* but we dont want this to run on page load */}
+                            <button onClick={() => this.handleDeleteNote(note.id)} className="bg-transparent bn f4">&times;</button>
                         </div>
                     ))}
                 </div>
