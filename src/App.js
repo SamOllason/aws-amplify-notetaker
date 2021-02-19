@@ -47,13 +47,18 @@ class App extends Component {
         // 'swap it' for updatedNote in note array and update state
 
         const updateResult = await API.graphql(graphqlOperation(updateNote, { input }));
+        const updatedNote = updateResult.data.updateNote
 
         const index = notes.findIndex(n => n.id === id)
 
         // remove 'old' entry at index and insert new entry in that place
-        notes.splice(index, 1, updateResult.data.updateNote)
+        const updatedNotes = [
+          ...notes.slice(0, index),
+            updatedNote,
+          ...notes.slice(index + 1)
+        ]
 
-        this.setState({notes, note:''});
+        this.setState({notes: updatedNotes, note:''});
     }
 
     handleAddNote = async event => {
