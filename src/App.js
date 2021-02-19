@@ -58,7 +58,7 @@ class App extends Component {
           ...notes.slice(index + 1)
         ]
 
-        this.setState({notes: updatedNotes, note:''});
+        this.setState({notes: updatedNotes, note:'', id: ''});
     }
 
     handleAddNote = async event => {
