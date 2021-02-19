@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { API, graphqlOperation } from 'aws-amplify';
 import { withAuthenticator } from 'aws-amplify-react'
 import { createNote, deleteNote, updateNote} from './graphql/mutations';
+import { onCreateNote } from './graphql/subscriptions';
 import { listNotes } from './graphql/queries';
 
 class App extends Component {
@@ -19,6 +20,27 @@ class App extends Component {
         this.setState({
             notes: result.data.listNotes.items
         })
+
+        // setup subscription which will be called whenever a note is created
+        // note: we get back the same data as if we had run the mutation
+        this.createNoteListener = API.graphql(graphqlOperation((onCreateNote))).subscribe({
+            next: noteData => {
+                const newNote = noteData.value.data.onCreateNote
+                // on the rare change there is an object with the same id that already exists
+                // SO: is this really needed?
+                const prevNotes = this.state.notes.filter(note => note.id !== newNote.id)
+                const updatedNotes = [
+                  ...prevNotes,
+                    newNote
+                ]
+
+                this.setState({ notes: updatedNotes })
+            }
+        })
+    }
+
+    componentWillUnmount(){
+        this.createNoteListener.unsubscribe()
     }
 
     handleChangeNote = event => this.setState({ note: event.target.value });
@@ -27,16 +49,10 @@ class App extends Component {
         const input = { note };
 
         // run the mutation to add the note and, once this is complete, store the returned data (the note we added)
-        const result = await API.graphql(graphqlOperation(createNote, { input }));
+        await API.graphql(graphqlOperation(createNote, { input }));
 
-        // use result from mutation to update UI
-        // and check to see if the note is actually a new one or just an
-        // updated version of an existing one
-        const newNote = result.data.createNote;
-
-        // if here then user wasn't updating an existing
-        const updatedNotes = [newNote, ...notes];
-        this.setState({notes: updatedNotes, note:''});
+        // logic to update 'notes' managed in subscription
+        this.setState({note:''});
     }
 
     handleUpdateNote = async (note, id, notes ) => {
