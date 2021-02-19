@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { API, graphqlOperation } from 'aws-amplify';
 import { withAuthenticator } from 'aws-amplify-react'
-import { createNote, deleteNote } from './graphql/mutations';
+import { createNote, deleteNote, updateNote} from './graphql/mutations';
 import { listNotes } from './graphql/queries';
 
 class App extends Component {
@@ -23,12 +23,7 @@ class App extends Component {
 
     handleChangeNote = event => this.setState({ note: event.target.value });
 
-    handleAddNote = async event => {
-        // prevents the default action, which is to reload the page
-        event.preventDefault();
-
-        const { note, id, notes } = this.state;
-
+    handleCreateNote = async (note, notes) => {
         const input = { note };
 
         // run the mutation to add the note and, once this is complete, store the returned data (the note we added)
@@ -39,19 +34,42 @@ class App extends Component {
         // updated version of an existing one
         const newNote = result.data.createNote;
 
-        const hasUpdatedExistingNote = id && notes.some(n => n.id === id)
+        // if here then user wasn't updating an existing
+        const updatedNotes = [newNote, ...notes];
+        this.setState({notes: updatedNotes, note:''});
+    }
 
-        // update state:
-        if(hasUpdatedExistingNote) {
-            // remove the old version of note user has modified in state, add new note
-            const updatedNotes = [newNote, ...notes.filter(n => n.id !== id)]
-            this.setState({notes: updatedNotes, note:''});
+    handleUpdateNote = async (note, id, notes ) => {
+        const input = { id, note };
+
+        // call API to update note,
+        // find the location of the note in the notes array and
+        // 'swap it' for updatedNote in note array and update state
+
+        const updateResult = await API.graphql(graphqlOperation(updateNote, { input }));
+
+        const index = notes.findIndex(n => n.id === id)
+
+        // remove 'old' entry at index and insert new entry in that place
+        notes.splice(index, 1, updateResult.data.updateNote)
+
+        this.setState({notes, note:''});
+    }
+
+    handleAddNote = async event => {
+        // prevents the default action, which is to reload the page
+        event.preventDefault();
+
+        const { note, id, notes } = this.state;
+
+        const hasUpdatedExistingNote = id !== '' && notes.some(n => n.id === id)
+
+        if (hasUpdatedExistingNote) {
+            await this.handleUpdateNote(note, id, notes)
         } else {
-            // if here then user wasn't updating an existing
-            const updatedNotes = [newNote, ...notes];
-            this.setState({notes: updatedNotes, note:''});
+            await this.handleCreateNote(note, notes)
         }
-    };
+    }
 
     handleDeleteNote = async nodeId => {
         const input = { id: nodeId }
@@ -59,7 +77,7 @@ class App extends Component {
         // call the deleteNode mutation
         const result = await API.graphql(graphqlOperation(deleteNote, { input}))
 
-        // use the Id to filter out the notes in our states to update the UI
+        // use the id to filter out the notes in our states to update the UI
         const deletedNodeId = result.data.deleteNote.id;
 
         const { notes } = this.state;
