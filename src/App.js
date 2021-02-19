@@ -7,6 +7,7 @@ import { listNotes } from './graphql/queries';
 class App extends Component {
     state = {
         note: '',
+        id: '',
         notes: [{
             id: 1,
             note: "Hello World"
@@ -26,7 +27,7 @@ class App extends Component {
         // prevents the default action, which is to reload the page
         event.preventDefault();
 
-        const { note, notes } = this.state;
+        const { note, id, notes } = this.state;
 
         const input = { note };
 
@@ -34,13 +35,26 @@ class App extends Component {
         const result = await API.graphql(graphqlOperation(createNote, { input }));
 
         // use result from mutation to update UI
+        // and check to see if the note is actually a new one or just an
+        // updated version of an existing one
         const newNote = result.data.createNote;
-        const updatedNotes = [newNote, ...notes];
-        this.setState({notes: updatedNotes, note:''});
+
+        const hasUpdatedExistingNote = id && notes.some(n => n.id === id)
+
+        // update state:
+        if(hasUpdatedExistingNote) {
+            // remove the old version of note user has modified in state, add new note
+            const updatedNotes = [newNote, ...notes.filter(n => n.id !== id)]
+            this.setState({notes: updatedNotes, note:''});
+        } else {
+            // if here then user wasn't updating an existing
+            const updatedNotes = [newNote, ...notes];
+            this.setState({notes: updatedNotes, note:''});
+        }
     };
 
     handleDeleteNote = async nodeId => {
-        const input = { id: nodeId}
+        const input = { id: nodeId }
 
         // call the deleteNode mutation
         const result = await API.graphql(graphqlOperation(deleteNote, { input}))
@@ -54,6 +68,8 @@ class App extends Component {
 
         this.setState({notes: updatedNotes});
     }
+
+    handleSetNote = ({ note, id }) => this.setState({note, id})
 
     render() {
         const { notes, note } = this.state;
@@ -76,14 +92,14 @@ class App extends Component {
 
                 {/*Notes list*/}
                 <div>
-                    {notes.map(note => (
-                        <div key={note.id} className="flex items-center">
-                            <li className="list pa1 f3">
-                                {note.note}
+                    {notes.map(item => (
+                        <div key={item.id} className="flex items-center">
+                            <li onClick={() => this.handleSetNote(item)} className="list pa1 f3">
+                                {item.note}
                             </li>
                           {/* Remember to make this an arrow function - since we are adding arguments we need to add '()' */}
                           {/* but we dont want this to run on page load! */}
-                            <button onClick={() => this.handleDeleteNote(note.id)} className="bg-transparent bn f4">&times;</button>
+                            <button onClick={() => this.handleDeleteNote(item.id)} className="bg-transparent bn f4">&times;</button>
                         </div>
                     ))}
                 </div>
