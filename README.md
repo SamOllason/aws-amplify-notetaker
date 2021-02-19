@@ -15,7 +15,7 @@ Steps for setup
 * Install Amplify CLI, configure Amplify CLI with AWS Account
 * Create React project with [Create React App](https://github.com/facebook/create-react-app)
 * Initialise the Amplify inside project using Amplify CLI with `amplify init`
-* Bring in GraphQL services (API + databas )for making + persisting data with `amplify add api`, setup authentication
+* Bring in GraphQL services (API + database)for making + persisting data with `amplify add api`, setup authentication
 * Create schema by adding a GraphQL type in schema.graphql. Then provision resources and generate
 all front-end config/boilerplate to interface with API using `amplify push`
 
