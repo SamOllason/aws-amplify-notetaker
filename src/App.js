@@ -45,8 +45,8 @@ class App extends Component {
         // call the deleteNode mutation
         const result = await API.graphql(graphqlOperation(deleteNote, { input}))
 
-        // use the Id to filter out the notes in our states to update teh UI
-        const deletedNodeId = result.data.deleteNode.id;
+        // use the Id to filter out the notes in our states to update the UI
+        const deletedNodeId = result.data.deleteNote.id;
 
         const { notes } = this.state;
 
@@ -82,7 +82,7 @@ class App extends Component {
                                 {note.note}
                             </li>
                           {/* Remember to make this an arrow function - since we are adding arguments we need to add '()' */}
-                          {/* but we dont want this to run on page load */}
+                          {/* but we dont want this to run on page load! */}
                             <button onClick={() => this.handleDeleteNote(note.id)} className="bg-transparent bn f4">&times;</button>
                         </div>
                     ))}
