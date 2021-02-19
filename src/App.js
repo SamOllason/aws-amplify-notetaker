@@ -95,7 +95,7 @@ class App extends Component {
     handleSetNote = ({ note, id }) => this.setState({note, id})
 
     render() {
-        const { notes, note } = this.state;
+        const { notes, note, id } = this.state;
         return (
             <div className="flex flex-column items-center justify-0center pa3 bg-washed-red">
                 <h1 className="code f2-l">Amplify Notetaker</h1>
@@ -109,7 +109,7 @@ class App extends Component {
                            value={note}
                     />
                     <button className="pa2 f4" type="submit">
-                        Add Note
+                        { id ? 'Update Note' : 'Add Note' }
                     </button>
                 </form>
 
